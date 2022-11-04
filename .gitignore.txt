@@ -1,0 +1,10 @@
+.RData
+Particle-counter-loop-WIP1.tex
+Particle-counter-WIP-7-6-21.tex
+Particle-counter-WIP-7-6-21.tex
+raw flow data
+Particle Data
+Flow Data
+Finished DF
+data_08232021
+raw data (folders will have pc and matching flow data)

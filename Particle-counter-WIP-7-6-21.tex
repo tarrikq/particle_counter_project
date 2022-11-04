@@ -1,0 +1,375 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={Particle counter seperate loops WIP},
+  pdfauthor={Tarrik Quneibi},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifluatex
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+
+\title{Particle counter seperate loops WIP}
+\author{Tarrik Quneibi}
+\date{6/3/2021}
+
+\begin{document}
+\maketitle
+
+install and read in all necessary packages. Some of these may not be
+used, I need to go back through and check which ones are absolutely
+necessary.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{knitr}\SpecialCharTok{::}\NormalTok{opts\_chunk}\SpecialCharTok{$}\FunctionTok{set}\NormalTok{(}\AttributeTok{echo =} \ConstantTok{TRUE}\NormalTok{)}
+
+\DocumentationTok{\#\#install packages}
+\DocumentationTok{\#\#install.packages("ggplot2")}
+\DocumentationTok{\#\#install.packages("reshape2")}
+\DocumentationTok{\#\#install.packages("dplyr")}
+\DocumentationTok{\#\#install.packages("tidyr")}
+\DocumentationTok{\#\#install.packages("chron")}
+\DocumentationTok{\#\#install.packages("anytime")}
+\DocumentationTok{\#\#install.packages("lubridate")}
+\DocumentationTok{\#\#install.packages("tidyverse")}
+
+\FunctionTok{library}\NormalTok{(ggplot2)}
+\FunctionTok{library}\NormalTok{(reshape2)}
+\FunctionTok{library}\NormalTok{(dplyr)}
+\FunctionTok{library}\NormalTok{(tidyr)}
+\FunctionTok{library}\NormalTok{(chron)}
+\FunctionTok{library}\NormalTok{(anytime)}
+\FunctionTok{library}\NormalTok{(lubridate)}
+\FunctionTok{library}\NormalTok{(tidyverse)}
+\end{Highlighting}
+\end{Shaded}
+
+setting the working directory Calling in all files that end in .csv.
+Creating empty lists for the particle data(table\_p), flow data
+(table\_d), and file names for both (p\_titles, f\_titles). creating
+vectors for the solumn names which will be applied after each dataframe
+is cleaned.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\#setting the working directory}
+\DocumentationTok{\#\#setwd("\textasciigrave{}/ R code/ particle counter data/")}
+
+\DocumentationTok{\#\#adds all .csv files in the working directory into a list}
+\NormalTok{file\_list }\OtherTok{\textless{}{-}} \FunctionTok{list.files}\NormalTok{(}\AttributeTok{pattern =} \StringTok{".csv"}\NormalTok{)}
+
+\DocumentationTok{\#\#creating empty lists to later add variables into}
+\NormalTok{table\_p }\OtherTok{\textless{}{-}}\FunctionTok{list}\NormalTok{()}
+\NormalTok{table\_f }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{()}
+\NormalTok{p\_titles }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{()}
+\NormalTok{f\_titles }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{()}
+\NormalTok{file\_titles }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{()}
+
+\DocumentationTok{\#\#list of column names for particle data and flow data}
+\NormalTok{p\_columns }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"Date"}\NormalTok{,}\StringTok{"Bin 1"}\NormalTok{, }\StringTok{"Bin 2"}\NormalTok{, }\StringTok{"Bin 3"}\NormalTok{, }\StringTok{"Bin 4"}\NormalTok{, }\StringTok{"Bin 5"}\NormalTok{, }\StringTok{"Bin 6"}\NormalTok{, }\StringTok{"Bin 7"}\NormalTok{, }\StringTok{"Bin 8"}\NormalTok{, }\StringTok{"Bin 9"}\NormalTok{)}
+\NormalTok{f\_columns }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\StringTok{"Date"}\NormalTok{, }\StringTok{"Flow"}\NormalTok{, }\StringTok{"Turbidity"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+This loop will take in only files from the file\_list that do not have
+the word ``Flow'' in the file name. This is how the particle counter
+data will be found. The loop begins by changing the name of the file so
+it is easier to read and then stores the name in the vector (p\_titles)
+The file is then read and the columns of interest (columns 2-12) are
+kept while the rest is removed. The date and time columns are then
+combined into one column and changed to date-time class. The old time
+column is deleted. The date column is then rounded to the nearest 15
+minute interval to match the flow data. The data and file name are
+combined and placed into table\_p to create a list of all the files.
+Outside of the for loop, the list of files are iterated through to
+remove any null entries and the file name is then applied to each
+dataframe.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\#iteration variable}
+\NormalTok{i }\OtherTok{\textless{}{-}} \DecValTok{0}
+\DocumentationTok{\#\#loop through directory to pull out all particle data}
+\ControlFlowTok{for}\NormalTok{ (file }\ControlFlowTok{in}\NormalTok{ file\_list)\{}
+\NormalTok{  i}\OtherTok{=}\NormalTok{i}\SpecialCharTok{+}\DecValTok{1}
+ \ControlFlowTok{if}\NormalTok{(}\SpecialCharTok{!}\FunctionTok{grepl}\NormalTok{(}\StringTok{"Flow"}\NormalTok{, file))\{}
+   
+\DocumentationTok{\#\#removes the .csv and date from the end of each file name and stores the name in a list}
+\NormalTok{    titles }\OtherTok{\textless{}{-}} \FunctionTok{substring}\NormalTok{(file, }\DecValTok{1}\NormalTok{, }\FunctionTok{nchar}\NormalTok{(file) }\SpecialCharTok{{-}} \DecValTok{13}\NormalTok{)}
+\NormalTok{    p\_titles[i] }\OtherTok{\textless{}{-}}\NormalTok{ titles}
+    
+\DocumentationTok{\#\#reading in the file and taking only the important columns}
+\NormalTok{    p\_data }\OtherTok{\textless{}{-}} \FunctionTok{read.csv}\NormalTok{(file)}
+\NormalTok{    p\_data }\OtherTok{\textless{}{-}}\NormalTok{ p\_data[, }\DecValTok{2}\SpecialCharTok{:}\DecValTok{12}\NormalTok{]}
+    
+\DocumentationTok{\#\#combines the date and time columns back into a single column with the correct format. }
+\DocumentationTok{\#\#Also changes the class from CHAR to Date{-}Time}
+\NormalTok{    p\_data}\SpecialCharTok{$}\NormalTok{Date }\OtherTok{\textless{}{-}} \FunctionTok{as.POSIXct}\NormalTok{(}\FunctionTok{paste}\NormalTok{(p\_data}\SpecialCharTok{$}\NormalTok{Date, p\_data}\SpecialCharTok{$}\NormalTok{Time), }\AttributeTok{format=}\StringTok{"\%m/\%d/\%Y \%H:\%M"}\NormalTok{)}
+    
+\DocumentationTok{\#\#deleting the old time column}
+\NormalTok{    p\_data[ , }\FunctionTok{c}\NormalTok{(}\StringTok{\textquotesingle{}Time\textquotesingle{}}\NormalTok{)] }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(}\ConstantTok{NULL}\NormalTok{)}
+    
+\DocumentationTok{\#\#the time was rounded to the nearest 15 minute mark so that it could be accurately joined with the flow data}
+\NormalTok{    p\_data}\SpecialCharTok{$}\NormalTok{Date }\OtherTok{\textless{}{-}} \FunctionTok{round\_date}\NormalTok{(p\_data}\SpecialCharTok{$}\NormalTok{Date, }\AttributeTok{unit =} \StringTok{"15 minutes"}\NormalTok{)}
+    
+\DocumentationTok{\#\#combines the file name with the data associated with it to create a variable}
+    \FunctionTok{colnames}\NormalTok{(p\_data) }\OtherTok{\textless{}{-}}\NormalTok{ p\_columns}
+    \FunctionTok{assign}\NormalTok{(titles, p\_data)}
+\NormalTok{    table\_p }\OtherTok{\textless{}{-}} \FunctionTok{append}\NormalTok{(table\_p, }\FunctionTok{list}\NormalTok{(p\_data))}
+    \FunctionTok{names}\NormalTok{(table\_p[i]) }\OtherTok{\textless{}{-}}\NormalTok{ titles}
+    
+\NormalTok{ \}\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Error in round_date(p_data$Date, unit = "15 minutes"): could not find function "round_date"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\#removes all the null entries in both lists and then names each data frame by its file name}
+\NormalTok{table\_p }\OtherTok{\textless{}{-}}\NormalTok{ table\_p[}\SpecialCharTok{{-}}\FunctionTok{which}\NormalTok{(}\FunctionTok{lapply}\NormalTok{(table\_p,is.null) }\SpecialCharTok{==}\NormalTok{ T)]}
+\NormalTok{p\_titles }\OtherTok{\textless{}{-}}\NormalTok{ p\_titles[}\SpecialCharTok{{-}}\FunctionTok{which}\NormalTok{(}\FunctionTok{lapply}\NormalTok{(p\_titles,is.null) }\SpecialCharTok{==}\NormalTok{ T)]}
+\FunctionTok{names}\NormalTok{(table\_p) }\OtherTok{\textless{}{-}}\NormalTok{ p\_titles}
+\end{Highlighting}
+\end{Shaded}
+
+This loop will take in only files from the file\_list that have the word
+``Flow'' in the file name. This is how the flow data will be found. The
+loop begins by changing the name of the file so it is easier to read and
+then stores the name in the vector (f\_titles) The file is then read and
+the columns of interest (columns 1-3) are kept while the rest is
+removed. Every 3rd row is then taken and the rest removed to have a data
+frame for each 15 minute interval (rather than every 5 minutes) The date
+and time columns are then split into two columns and formatted to match
+the particle counter data (MDY) The date and time columns are then
+combined into one column and changed to date-time data. The date column
+is then rounded to the nearest 15 minute interval to match the flow
+data. The flow data column is then rounded to either 1 or 0 depending if
+it is greater than or less than 0.01 The data and file name are combined
+and placed into table\_f to create a list of all the files. Outside of
+the for loop, the list of files are iterated through to remove any null
+entries and the file name is then applied to each dataframe.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\#iteration variable}
+\NormalTok{i }\OtherTok{\textless{}{-}} \DecValTok{0}
+
+\DocumentationTok{\#\#loop to pull all flow data from the directory}
+\ControlFlowTok{for}\NormalTok{ (file }\ControlFlowTok{in}\NormalTok{ file\_list)\{}
+\NormalTok{  i}\OtherTok{=}\NormalTok{i}\SpecialCharTok{+}\DecValTok{1}
+  \ControlFlowTok{if}\NormalTok{(}\FunctionTok{grepl}\NormalTok{(}\StringTok{"Flow"}\NormalTok{, file))\{}
+    
+\DocumentationTok{\#\#removes the .csv from the end of each file name}
+\NormalTok{   titles }\OtherTok{\textless{}{-}} \FunctionTok{substring}\NormalTok{(file, }\DecValTok{1}\NormalTok{, }\FunctionTok{nchar}\NormalTok{(file) }\SpecialCharTok{{-}} \DecValTok{13}\NormalTok{)}
+\NormalTok{   f\_titles[i] }\OtherTok{\textless{}{-}}\NormalTok{ titles}
+   
+\DocumentationTok{\#\#reading each file}
+\NormalTok{   f\_data }\OtherTok{\textless{}{-}} \FunctionTok{read.csv}\NormalTok{(file)}
+\NormalTok{   f\_data }\OtherTok{\textless{}{-}}\NormalTok{ f\_data[ ,}\DecValTok{1}\SpecialCharTok{:}\DecValTok{3}\NormalTok{]}
+   
+\DocumentationTok{\#\#takes every third row so that only every 15 minutes is considered}
+\NormalTok{   f\_data }\OtherTok{=}\NormalTok{ f\_data[}\FunctionTok{seq}\NormalTok{(}\DecValTok{1}\NormalTok{, }\FunctionTok{nrow}\NormalTok{(f\_data), }\DecValTok{3}\NormalTok{), ]}
+   
+\DocumentationTok{\#\#changes the first column name to date}
+   \FunctionTok{colnames}\NormalTok{(f\_data)[}\DecValTok{1}\NormalTok{] }\OtherTok{\textless{}{-}} \StringTok{"Date"}
+   
+\DocumentationTok{\#\#seperates the date and time into two columns}
+\NormalTok{   f\_data }\OtherTok{\textless{}{-}}\NormalTok{ f\_data }\SpecialCharTok{\%\textgreater{}\%} \FunctionTok{separate}\NormalTok{(Date, }\FunctionTok{c}\NormalTok{(}\StringTok{"Date"}\NormalTok{, }\StringTok{"Time"}\NormalTok{), }\StringTok{" "}\NormalTok{)}
+   
+\CommentTok{\#changes the date to a new format which matches the particle counter date format}
+\NormalTok{   f\_data}\SpecialCharTok{$}\NormalTok{Date }\OtherTok{\textless{}{-}} \FunctionTok{as.Date}\NormalTok{(f\_data}\SpecialCharTok{$}\NormalTok{Date, }\AttributeTok{format =} \StringTok{"\%m/\%d/\%y"}\NormalTok{)}
+   
+\DocumentationTok{\#\#combines the date and time columns back into a single column with the correct format. }
+\DocumentationTok{\#\#Also changes the class from CHAR to Date{-}Time}
+\NormalTok{   f\_data}\SpecialCharTok{$}\NormalTok{Date }\OtherTok{\textless{}{-}} \FunctionTok{as.POSIXct}\NormalTok{(}\FunctionTok{paste}\NormalTok{(f\_data}\SpecialCharTok{$}\NormalTok{Date, f\_data}\SpecialCharTok{$}\NormalTok{Time), }\AttributeTok{format=}\StringTok{"\%Y{-}\%m{-}\%d \%H:\%M"}\NormalTok{)}
+   
+\DocumentationTok{\#\#deleting the old time column}
+\NormalTok{   f\_data[ , }\FunctionTok{c}\NormalTok{(}\StringTok{\textquotesingle{}Time\textquotesingle{}}\NormalTok{)] }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{(}\ConstantTok{NULL}\NormalTok{)}
+   
+\DocumentationTok{\#\#the time was rounded to the nearest 15 minute mark so that it could be accurately joined with the particle data}
+\NormalTok{   f\_data}\SpecialCharTok{$}\NormalTok{Date }\OtherTok{\textless{}{-}} \FunctionTok{round\_date}\NormalTok{(f\_data}\SpecialCharTok{$}\NormalTok{Date, }\AttributeTok{unit =} \StringTok{"15 minutes"}\NormalTok{)}
+   
+\DocumentationTok{\#\#takes any flow data value above 0.01 and changes it to 1, while anything below 0.01 is changed to 0}
+\NormalTok{   f\_data[ , }\DecValTok{2}\NormalTok{] }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(f\_data[ ,}\DecValTok{2}\NormalTok{] }\SpecialCharTok{\textgreater{}} \FloatTok{0.01}\NormalTok{, }\DecValTok{1}\NormalTok{, }\DecValTok{0}\NormalTok{)}
+   
+\DocumentationTok{\#\#combines the file name with the data associated with it to create a variable}
+   \FunctionTok{colnames}\NormalTok{(f\_data) }\OtherTok{\textless{}{-}}\NormalTok{ f\_columns}
+   \FunctionTok{assign}\NormalTok{(titles, f\_data)}
+\NormalTok{   table\_f }\OtherTok{\textless{}{-}} \FunctionTok{append}\NormalTok{(table\_f, }\FunctionTok{list}\NormalTok{(f\_data))}
+   \FunctionTok{names}\NormalTok{(table\_f[i]) }\OtherTok{\textless{}{-}}\NormalTok{ titles}
+\NormalTok{  \}}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Error in f_data %>% separate(Date, c("Date", "Time"), " "): could not find function "%>%"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\#removes all the null entries in both lists and then names each data frame by its file name}
+\NormalTok{table\_f }\OtherTok{\textless{}{-}}\NormalTok{ table\_f[}\SpecialCharTok{{-}}\FunctionTok{which}\NormalTok{(}\FunctionTok{lapply}\NormalTok{(table\_f,is.null) }\SpecialCharTok{==}\NormalTok{ T)]}
+\NormalTok{f\_titles }\OtherTok{\textless{}{-}}\NormalTok{ f\_titles[}\SpecialCharTok{{-}}\FunctionTok{which}\NormalTok{(}\FunctionTok{lapply}\NormalTok{(f\_titles,is.null) }\SpecialCharTok{==}\NormalTok{ T)]}
+\FunctionTok{names}\NormalTok{(table\_f) }\OtherTok{\textless{}{-}}\NormalTok{ f\_titles}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Error in names(table_f) <- f_titles: 'names' attribute [1] must be the same length as the vector [0]
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\#Joining the particle data and flow data by the data and time}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\FunctionTok{length}\NormalTok{(table\_p)) \{}
+\NormalTok{   table\_p[[i]] }\OtherTok{\textless{}{-}} \FunctionTok{left\_join}\NormalTok{(table\_p[[i]], table\_f[[i]], }\AttributeTok{by =} \FunctionTok{c}\NormalTok{(}\StringTok{"Date"}\NormalTok{))}
+\NormalTok{   Date }\OtherTok{\textless{}{-}}\NormalTok{ table\_p[[i]]}\SpecialCharTok{$}\NormalTok{Date}
+\NormalTok{   table\_p[[i]] }\OtherTok{\textless{}{-}}\NormalTok{ (table\_p[[i]][ , }\DecValTok{2}\SpecialCharTok{:}\DecValTok{10}\NormalTok{])}\SpecialCharTok{*}\NormalTok{(table\_p[[i]][ , }\DecValTok{11}\NormalTok{])}
+\NormalTok{   table\_p[[i]] }\OtherTok{\textless{}{-}} \FunctionTok{cbind}\NormalTok{(Date, table\_p[[i]])}
+   
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Error in left_join(table_p[[i]], table_f[[i]], by = c("Date")): could not find function "left_join"
+\end{verbatim}
+
+I left off in the splitting to bins chunk below. I have been trying
+different ways of going about doing it but I cannot seem to get what we
+are looking for.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{bins }\OtherTok{\textless{}{-}} \FunctionTok{list}\NormalTok{()}
+
+
+\NormalTok{data }\OtherTok{\textless{}{-}} \FunctionTok{lapply}\NormalTok{(table\_p, }\ControlFlowTok{function}\NormalTok{(x)\{}
+\NormalTok{  bins[}\DecValTok{1}\NormalTok{] }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\FunctionTok{list}\NormalTok{(x[, }\DecValTok{2}\NormalTok{]), bins)}
+\NormalTok{  bins[}\DecValTok{2}\NormalTok{] }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\FunctionTok{list}\NormalTok{(x[, }\DecValTok{3}\NormalTok{]), bins)}
+\NormalTok{  bins[}\DecValTok{3}\NormalTok{] }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\FunctionTok{list}\NormalTok{(x[, }\DecValTok{4}\NormalTok{]), bins)}
+\NormalTok{  bins[}\DecValTok{4}\NormalTok{] }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\FunctionTok{list}\NormalTok{(x[, }\DecValTok{5}\NormalTok{]), bins)}
+\NormalTok{  bins[}\DecValTok{5}\NormalTok{] }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\FunctionTok{list}\NormalTok{(x[, }\DecValTok{6}\NormalTok{]), bins)}
+\NormalTok{  bins[}\DecValTok{6}\NormalTok{] }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\FunctionTok{list}\NormalTok{(x[, }\DecValTok{7}\NormalTok{]), bins)}
+\NormalTok{  bins[}\DecValTok{7}\NormalTok{] }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\FunctionTok{list}\NormalTok{(x[, }\DecValTok{8}\NormalTok{]), bins)}
+\NormalTok{  bins[}\DecValTok{8}\NormalTok{] }\OtherTok{\textless{}{-}} \FunctionTok{c}\NormalTok{(}\FunctionTok{list}\NormalTok{(x[, }\DecValTok{9}\NormalTok{]), bins)}
+  
+\NormalTok{\}}
+\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+everything below here is to later be used inside the loop above
+
+\#\#////////////////////////////////////Dont run below code until the
+data frames are joined correctly
+\#\#////////////////////////////////////Will need to add a loop to go
+through all runs for each filter to plot
+
+\#\#plotting the data as a scatterplot ggplot(final\_data, aes(Date,
+value, col=variable)) + geom\_point() + stat\_smooth() +
+ggtitle(``Particle counts from 2/19/21-2/20/21'') + \# for the main
+title xlab(``Date'') + \# for the x axis label ylab(``Counts'') + \# for
+the y axis label scale\_x\_discrete(breaks = c(2/19/21, 2/20/21,\\
+2/20/21 ))
+
+\end{document}

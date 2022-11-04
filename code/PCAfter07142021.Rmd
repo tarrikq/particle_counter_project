@@ -1,0 +1,974 @@
+---
+title: "PC after 07142021"
+author: "Tarrik Quneibi"
+date: "8/11/2021"
+output: html_document
+---
+
+
+
+```{r installPackages, include=FALSE, eval=FALSE, echo=FALSE}
+    ## echo false = don't show code in knitted doc
+    ##include false = don't include the chunk in the doc after running
+    ##eval false = don't run code in the chunk 
+
+##install packages
+install.packages("ggplot2")
+install.packages("reshape2")
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("chron")
+install.packages("anytime")
+install.packages("lubridate")
+install.packages("tidyverse")
+install.packages("bayesbio")
+install.packages("patchwork")
+install.packages("devtools")
+install.packages("polynom")
+
+```
+
+
+```{r openLibraries, eval=TRUE, echo=TRUE, include=FALSE}
+##setting the working directory
+##setwd("`/ R code/ particle counter data/")
+
+##setwd("C:/Users/RLahr/OneDrive - City of Ann Arbor/RHL/data/R_data analysis/Tarrik/Particle counter code_7.1.2021")
+
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+library(tidyr)
+library(chron)
+library(anytime)
+library(lubridate)
+library(tidyverse)
+library(bayesbio)
+library(patchwork)
+library(devtools)
+source_gist("524eade46135f6348140")
+library(polynom)
+
+```
+
+# Data Processing
+
+## 1) List the files
+
+Calling in all files that end in .csv.
+
+Creating empty lists for the particle data(table_p), flow data (table_d), and file names for both (p_titles, f_titles). 
+
+creating vectors for the column names which will be applied after each dataframe is cleaned.
+```{r listCreation, include=TRUE, eval=TRUE, echo=TRUE}
+
+
+##adds all .csv files in the working directory into a list
+file_list <- list.files(pattern = ".csv")
+
+##creating empty lists to later add variables into
+table_p <-list()
+table_f <- list()
+p_titles <- list()
+f_titles <- list()
+file_titles <- list()
+
+##list of column names for particle data and flow data
+p_columns <- c("Date","Bin1", "Bin2", "Bin3", "Bin4", "Bin5", "Bin6", "Bin7", "Bin8", "Bin9","Filter" , "sampledDatePC")
+f_columns <- c("Date", "Flow", "Turbidity", "Filter", "sampledDateFlow", "sampledFlow")
+
+```
+
+## 2) load particle count files
+
+This loop will take in only files from the file_list that do not have the word "Flow" in the file name. This is how the particle counter data will be found.
+
+The loop begins by changing the name of the file so it is easier to read and then stores the name in the vector (p_titles)
+
+The file is then read and the columns of interest (columns 2-12) are kept while the rest is removed.
+
+The date and time columns are then combined into one column and changed to date-time class. The old time column is deleted.
+
+The date column is then rounded to the nearest 15 minute interval to match the flow data.
+
+The data and file name are combined and placed into table_p to create a list of all the files.
+
+Outside of the for loop, the list of files are iterated through to remove any null entries and the file name is then applied to each dataframe.
+
+```{r particle counter, include=TRUE, eval=TRUE, echo=TRUE}
+
+##iteration variable
+i <- 0
+##loop through directory to pull out all particle data
+for (file in file_list){
+
+ if(!grepl("Flow|flow|PC|Before", file)){
+     i=i+1
+##removes the .csv and date from the end of each file name and stores the name in a list
+    titles <- substring(file, 1, nchar(file) - 13)
+    p_titles[[i]] <- titles
+    
+##reading in the file and taking only the important columns
+    p_data <- read.csv(file)
+    p_data <- p_data[, 2:12]
+    p_data$filter <- substring(titles, 7, 8)
+    
+##combines the date and time columns back into a single column with the correct format. 
+##Also changes the class from CHAR to Date-Time
+    p_data$Date <- as.POSIXct(paste(p_data$Date, p_data$Time), tz = "EST", format="%m/%d/%Y %H:%M")
+    ##p_data <- subset( p_data, (Date >= as.Date("2021-07-22")))
+##deleting the old time column
+    p_data[ , c('Time')] <- list(NULL)
+    
+##the time was rounded to the nearest 15 minute mark so that it could be accurately joined with the flow data. 
+    ##But keep the old time info that wasn't rounded so you know when the particle counter data was recorded. 
+    p_data$sampledDatePC <- p_data$Date
+    p_data$Date <- lubridate::round_date(p_data$Date, unit = "15 minutes")
+       
+    
+##combines the file name with the data associated with it to create a variable
+    
+    colnames(p_data) <- p_columns
+    assign(titles, p_data)
+    table_p <- append(table_p, list(p_data))
+    names(table_p[i]) <- titles
+
+    
+ }}
+
+
+##removes all the null entries in both lists and then names each data frame by its file name
+##table_p <- table_p[-which(lapply(table_p,is.null) == T)]
+##p_titles <- p_titles[-which(lapply(p_titles,is.null) == T)]
+names(table_p) <- p_titles
+
+```
+
+## 3) Seperate PC data into individual filters
+
+This code will take each filter dataframe and determine which filter number it belongs to by dividing the time by 2. If there is a remainder from the divisiion then the code knows it is an odd hour and will assign the lower numered filter to that data point.
+
+```{r seperating PC filter data}
+pcTitles <- list()
+pcList <- list()
+i <- 0
+for (filter in table_p){
+  i <- i+1
+   titles <- substring(filter, 1, length(nchar(filter)))
+   pcTitles[[i]] <- names(table_p[i])
+   filter$Filter <- as.numeric(filter$Filter)
+   
+      if (nrow(filter) == 0){
+      print("There is no particle counter data")
+      pcList[[i]] <- filter
+      next
+    } 
+   
+      if (filter$Filter[1] == 13 || filter$Filter[1] == 14  || filter$Filter[1] == 17){
+        filter$group <- format(filter$sampledDatePC,"%H:%M:%S")
+        filter$group <- substring(filter$group, 1, 2)
+        filter$group <- as.numeric(filter$group)
+        filterNew <- subset(filter, filter$group %% 2 == 0)
+        filter <- anti_join(filter, filterNew)
+       filterNew$Filter <- filterNew$Filter + 2
+       pcList[[i]] <- filter
+        i <- i +1
+        pcList[[i]] <- filterNew
+        
+      }
+   if (filter$Filter[1] == 18){
+        filter$group <- format(filter$sampledDatePC,"%H:%M:%S")
+        filter$group <- substring(filter$group, 1, 2)
+        filter$group <- as.numeric(filter$group)
+       pcList[[i]] <- filter
+   }
+      if (filter$Filter[1] == 11 | filter$Filter[1] == 12){
+       filter$group <- format(filter$sampledDatePC,"%H:%M:%S")
+        filter$group <- substring(filter$group, 1, 2)
+        filter$group <- as.numeric(filter$group)
+        filterNew <- subset(filter, filter$group %% 2 != 0)
+        filter <- anti_join(filter, filterNew)
+        filterNew$Filter <- filterNew$Filter - 2
+        pcList[[i]] <- filter
+        i <- i +1
+        pcList[[i]] <- filterNew
+        }
+      if (filter$Filter[1] == 21 || filter$Filter[1] == 23 || filter$Filter[1] == 25){
+       filter$group <- format(filter$sampledDatePC,"%H:%M:%S")
+        filter$group <- substring(filter$group, 1, 2)
+        filter$group <- as.numeric(filter$group)
+        filterNew <- subset(filter, filter$group %% 2 == 0)
+        filter <- anti_join(filter, filterNew)
+        filterNew$Filter <- filterNew$Filter + 1
+        pcList[[i]] <- filter
+        i <- i +1
+        pcList[[i]] <- filterNew
+            }
+}
+allPCData <- bind_rows(pcList)
+
+```
+
+## 4) load flow files
+
+This loop will take in only files from the file_list that have the word "Flow" in the file name. This is how the flow data will be found.
+
+The loop begins by changing the name of the file so it is easier to read and then stores the name in the vector (f_titles)
+
+The file is then read and the columns of interest (columns 1-3) are kept while the rest is removed.
+
+Every 3rd row is then taken and the rest removed to have a data frame for each 15 minute interval (rather than every 5 minutes)
+
+The date and time columns are then split into two columns and formatted to match the particle counter data (MDY)
+
+The date and time columns are then combined into one column and changed to date-time data.
+
+The date column is then rounded to the nearest 15 minute interval to match the flow data.
+
+The flow data column is then rounded to either 1 or 0 depending if it is greater than or less than 0.01
+
+The data and file name are combined and placed into table_f to create a list of all the files.
+
+Outside of the for loop, the list of files are iterated through to remove any null entries and the file name is then applied to each dataframe.
+
+```{r flowData, include=TRUE, eval=TRUE, echo=TRUE}
+    ## echo false = don't show code in knitted doc
+    ##include false = don't include the chunk in the doc after running
+    ##eval false = don't run code in the chunk 
+
+##iteration variable
+i <- 0
+
+##loop to pull all flow data from the directory
+for (file in file_list){
+
+  if(grepl("Flow|flow", file)){
+      i=i+1
+##removes the .csv from the end of each file name
+   titles <- substring(file, 1, nchar(file) - 13)
+   f_titles[i] <- titles
+   
+   
+##reading each file
+   f_data <- read.csv(file)
+   f_data <- f_data[ ,1:3]
+   f_data$filter <- substring(titles, 7, 8)
+
+##takes every third row so that only every 15 minutes is considered. 
+   #Do we need to? Left_join shoudl be ablet to handle the flow data as every 5 minutes and just sort out the numbers needed. 
+   #f_data = f_data[seq(1, nrow(f_data), 3), ]
+   
+##changes the first column name to date
+   colnames(f_data)[1] <- "Date"
+
+##Tarrik: The time data wasn't converting properly for the time...so instead used the parse_date_time function to convert it and stored it as sampledDateFlow. Needed a date time not just a time. 
+   f_data$sampledDateFlow <- parse_date_time(f_data$Date, tz = "EST", orders = "mdyHM", truncated = 3)
+
+   
+##separates the date and time into two columns
+   
+   f_data <- f_data %>% separate(Date, c("Date", "Time"), " ")
+   
+#changes the date to a new format which matches the particle counter date format
+   f_data$Date <- as.Date(f_data$Date, format = "%m/%d/%y")
+   
+   
+##combines the date and time columns back into a single column with the correct format. 
+##Also changes the class from CHAR to Date-Time
+    ##this next one not working....also didn't work to just use the sampledDateFlow. so convert the sampledDateFlow into as.POSIXct
+   #f_data$Date <- as.POSIXct(paste(f_data$Date, f_data$Time), format="%m/%d/%Y %H:%M")
+   
+      f_data$Date <- as.POSIXct(f_data$sampledDateFlow, tz = "EST", format="%m/%d/%Y %H:%M")
+   
+    
+##deleting the old time column
+   f_data[ , c('Time')] <- list(NULL)
+   
+##the time was rounded to the nearest 15 minute mark so that it could be accurately joined with the particle data
+      ##should be able to get by with rounding every 5 min... left_join should be able to match that. 
+   f_data$Date <- round_date(f_data$Date, unit = "5 minutes")
+
+   
+##takes any flow data value above 0.01 and changes it to 1, while anything below 0.01 is changed to 0
+   f_data$sampledFlow <- f_data[ , 2]
+   f_data[ , 2] <- ifelse(f_data[ ,2] > 0.01, 1, 0)
+   
+##combines the file name with the data associated with it to create a variable
+   colnames(f_data) <- f_columns
+   assign(titles, f_data)
+   table_f <- append(table_f, list(f_data))
+   names(table_f[i]) <- titles
+  }
+}
+
+##removes all the null entries in both lists and then names each data frame by its file name
+##table_f <- table_f[-which(lapply(table_f,is.null) == T)]
+##f_titles <- f_titles[-which(lapply(f_titles,is.null) == T)]
+names(table_f) <- f_titles
+
+allFlowData <- bind_rows(table_f)
+allFlowData$Filter <- as.numeric(allFlowData$Filter)
+```
+
+## 5) Join the data together into one list with a dataframe for each filter. 
+
+This will join the particle counter and flow data into on dataframe based on the date and time.
+
+The two dataframes it will look at is determined by how the files are listed in the directory.
+
+Be sure to list the files alphabetically so that R brings in the PC and flow data in the same order based on filter number.
+
+The loop will then multiple the flow data by he PC data to find the relevent data.
+
+It ends by adding in the columns that did not need multiplied.
+
+```{r joining, include=TRUE, eval=TRUE, echo=TRUE}
+    ## echo false = don't show code in knitted doc
+    ##include false = don't include the chunk in the doc after running
+    ##eval false = don't run code in the chunk 
+  
+  allData <- left_join(allPCData, allFlowData, by = c("Date", "Filter"))
+   Date <- allData$Date
+   flow <- allData$Flow
+   turbidity <- allData$Turbidity
+   sampledDateFlow<- allData$sampledDateFlow
+   sampledDatePC<- allData$sampledDatePC
+   sampledFlow <- allData$sampledFlow
+   filter <- allData$Filter
+   allData <- (allData[ , 2:10])*(allData[ , 14])
+   allData <- cbind(turbidity, allData) 
+   allData <- cbind(flow, allData) 
+   allData <- cbind(sampledDateFlow, allData)
+   allData <- cbind(sampledDatePC, allData)  
+   allData <- cbind(sampledFlow, allData) 
+   allData <- cbind(Date, allData)
+   allData <- cbind(filter, allData)
+
+   pcList <- split(allData , f = allData$filter )
+   titles <- names(pcList)
+```
+
+## 6) Adding in old data
+This will add in an old dataframe and attach it to the new data. 
+
+Comment this section out if there is no old data.
+
+This section must also be updated to read in the name of the old file.
+
+```{r calling in old and attaching to new data}
+  ## Comment this out if there is no old file to read in and combine
+   for (file in file_list){
+ if (grepl("Before|PC", file)){
+    oldFile <- read.csv(file)
+  }
+}
+  oldFile <- oldFile[ ,1:16]
+  oldFile$sampledDatePC <- as.POSIXct(oldFile$sampledDatePC, tz = "EST", format="%Y-%m-%d %H:%M:%S")
+  oldFile$Date <- as.POSIXct(oldFile$Date, tz = "EST", format="%Y-%m-%d %H:%M:%S")
+  oldFile$sampledDateFlow <- as.POSIXct(oldFile$sampledDateFlow, tz = "EST", format="%Y-%m-%d %H:%M:%S")
+  allData <- rbind(allData, oldFile)
+  allData <- allData[order(allData$filter, allData$Date), ]
+  allData <- allData[!duplicated(allData[ , c("Date","filter")]),]
+   
+   pcList <- split(allData , f = allData$filter )
+  titles <- names(pcList)
+   
+   
+
+```
+  
+## 7) Break data into runs
+
+This code begins by subsetting each dataframe to find only the times where flow is above 0.1
+
+It then determines and assignes the run number based on the amount of time that has passed between data points.
+
+It ends by placing all of the updated dataframes into a list by filter number.
+
+```{r filterRuns, include=TRUE, eval=TRUE, echo=TRUE}
+
+   list_p <- list()
+   i <- 0
+   z <- 0
+   p_list <- list()
+  for (df in pcList){
+   z <- z+1
+   j <- 1
+    df.name <- deparse(substitute(df))
+    sub <- subset(df, flow >0.01)
+    
+    if (nrow(sub) == 0){
+      print("There is no relevent data. Check the flow data and particle data dates to see if they match")
+      p_list[[z]] <- sub
+      next
+    }
+    
+    sub$difference <- 0
+    sub$runID <- 0
+
+    
+    for (i in 1:length(sub$Date)){
+      difference <- abs(difftime(sub$Date[i+1], sub$Date[i] ,units="mins"))
+      sub$difference[i] <- difference
+      
+      ##runDifference <- difftime(sub$Date[i], sub$Date[1], units = "hours")
+      ##sub$runningDifference[i] <- runDifference
+      if (is.na(difference)) {
+        difference <- 0
+      }
+      if (i == 1 & difference < 200){
+        sub$runID[i] <- 1
+        sub$runID[i+1] <- 1
+      }
+      if ( i == length(sub$Date)){
+        sub$runID[i] <- j
+      }
+      if (i == 1 & difference > 200){
+        j <- j+1
+        sub$runID[i] <- 1
+        sub$runID[i+1] <- j
+      }
+      
+      
+     if (difference < 200 & i != 1 & i != length(sub$Date)) {
+      sub$runID[i+1] <- j
+      
+      
+    } 
+    if ( difference > 200 & i != 1 & i != length(sub$Date)){
+     j <- j+1
+      sub$runID[i+1] <- j
+   }
+  
+    }
+    p_list[[z]] <- sub
+
+  }
+       names(p_list) <- titles
+    
+    #then repeat all the code above but find the next filterOnDate AFTER the filterOffDate...and append the data into filterRunPCs.Do this until run out dates.   
+    
+    #then stored in a list like table_p where each filter has one dataframe.  
+    
+    
+    #then once that code all works, put it into a for loop so it would run for every filter. Will need to instead start with an empty filterRunPCs dataframe and append to it instead of just staring it fresh.  
+
+```
+
+## 8) Combining into one dataframe
+
+This loop splits each data frame from the list by their runs. 
+
+It then adds a columns for total run time and adds the new dataframe into a list.
+
+The end result is a list of dataframes based on filter number and run ID.
+
+It then combines all dataframes from the list into a single dataframe.
+
+
+```{r adding run time and combining into one dataframe}
+list_df <-list()
+i <- 0
+z <- 0
+for (df in p_list){
+  i <- i+1
+  listDF <- split(df, df$runID) 
+  
+  for (runs in listDF){
+    z <- z+1
+    
+    for (j in 1:nrow(runs)){
+      runs$runDifference[j] <- difftime(runs$Date[j], runs$Date[1], units = "hours")
+    }
+    
+  p_list[[z]] <- runs  
+  }
+}
+allData <- bind_rows(p_list)
+allData$filterRun <- paste(allData$filter,allData$runID,sep=" run ")
+allData$runStartDate <- paste(allData$runID,format(allData$sampledDatePC,"%m"),sep=" month ")
+##write.csv(allData,"C:/Users/Tarri/Desktop/PCcounts08052021.csv", row.names = FALSE)
+
+
+
+```
+
+## 9) Data summary
+
+```{r dataSummary}
+
+summary(allData)
+
+head(allData)
+
+```
+## 10) Total runs
+This will calculated the total number of runs in the dataframe.
+
+```{r determining total runs}
+uniqOld <- unique(oldFile$filterRun)
+length(uniqOld)
+uniqNew <- unique(allData$filterRun)
+length(uniqNew)
+
+```
+
+```{r scatterplot of particls over runtime}
+
+ggplot() + 
+  geom_point(data = allData, aes(x =runDifference, y = Bin1)) +
+  xlab('Filter run time (hours)') +
+  ylab('2-6 um particle counts (Counts/ml)')+
+  ylim(0,5000)
+
+allData$minutes <- as.numeric(format(allData$sampledDatePC,"%M"))
+allDataSub <- subset(allData, minutes >15 )
+
+ggplot() + 
+  geom_point(data = allDataSub, aes(x =runDifference, y = Bin1)) +
+  xlab('Filter run time (hours)') +
+  ylab('2-6 um particle counts (Counts/ml)')+
+  ylim(0,5000)
+
+allDataSub300 <- subset(allDataSub, Bin1 <300 )
+
+ggplot() + 
+  geom_point(data = allDataSub300, aes(x =runDifference, y = Bin1)) +
+  xlab('Filter run time (hours)') +
+  ylab('2-6 um particle counts (Counts/ml)')+
+  ylim(0,300)
+
+```
+
+
+
+## 11) Flow difference
+
+Calculates the flow difference between rows.
+
+```{r adding flow difference to df annd removing 0-15 minute data}
+
+allData <-allData %>%
+    group_by(filterRun) %>%
+    mutate(flowDiff = sampledFlow - lag(sampledFlow))
+allData <- subset(allData, minutes > 15)
+```
+
+## 12) Plotting flow difference vs. counts/ml
+
+this will make a subset of the new and old data to remove all data from the 0-15 minute mark.
+
+Plots are then made to show flow difference vs. particle counts.
+
+Then the subset is taken again to show the counts above 300 and remove all the 0-15 minute data.
+
+Plots are then made to show flow difference vs. particle counts.
+
+```{r plotting subset of above 15 minutes and above 300 counts}
+
+ ggplot() + 
+  geom_point(data = allData, aes(x =flowDiff, y = Bin1)) +
+  xlab('Change in flow rate (MGD)') +
+  ylab('2-6 um particle counts (Counts/ml)')+
+  ylim(0,5000)
+ 
+   ggplot() + 
+  geom_point(data = allData, aes(x = sampledFlow, y = Bin1)) +
+ xlab('flow rate (MGD)') +
+  ylab('2-6 um particle counts (Counts/ml)')+
+    ylim(0,5000)
+  
+  allDataSub300 <- subset(allData, Bin1 < 300)
+   ggplot() + 
+  geom_point(data = allDataSub300, aes(x = sampledFlow, y = Bin1)) +
+ xlab('flow rate (MGD)') +
+  ylab('2-6 um particle counts (Counts/ml)')
+
+
+
+```
+
+
+## 13) subsetting dataframe to analyze outliers
+
+Plots the data above the 300 counts/ml cutoff 
+
+```{r number of points above a certain limit}
+##newData <- allData
+subOld <- subset(oldFile, Bin1 >300)
+subNew <- subset(allData, Bin1 > 300)
+
+subOld$sampledDatePC <- as.POSIXct(subOld$sampledDatePC, tz = "EST", format="%Y-%m-%d %H:%M")
+subOld$minutes <- as.numeric(format(subOld$sampledDatePC,"%M"))
+subNew$minutes <- as.numeric(format(subNew$sampledDatePC,"%M"))
+
+subOld <- subset(subOld, minutes > 15)
+subNew <- subset(subNew, minutes > 15)
+
+boxplot(subOld$minutes, col=rainbow(4),
+        main = "Data from 3/1 - 8/5",
+           xlab = "data",
+           ylab = "minutes")+
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14,face="bold"))
+
+boxplot(subNew$minutes, col=rainbow(4),
+        main = "Data from 8/5 - 8/23",
+           xlab = "data",
+           ylab = "minutes")+
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14,face="bold"))
+
+```
+
+## 14) Plot of runtime vs. Bin 1 particles 
+
+Removes data from 0-15 minute mark and plots the runtime vs. particle counts
+
+Then plots the turbidity vs. particle counts
+
+```{r subsetting to remove 0-15 minute data}
+subOld <- oldFile
+subNew <- allData
+subOld$sampledDatePC <- as.POSIXct(subOld$sampledDatePC, tz = "EST", format="%Y-%m-%d %H:%M")
+subOld$minutes <- as.numeric(format(subOld$sampledDatePC,"%M"))
+subNew$minutes <- as.numeric(format(subNew$sampledDatePC,"%M"))
+subOld <- subset(subOld, minutes > 15)
+subNew <- subset(subNew, minutes > 15)
+
+ ggplot() + 
+  geom_point(data = subOld, aes(x = runDifference, y = Bin1)) +
+  xlab('Runtime') +
+  ylab('Counts/ml')+
+  ggtitle('Data from 3/1 - 8/5')
+ 
+  ggplot() + 
+  geom_point(data = subNew, aes(x = runDifference, y = Bin1)) +
+ xlab('Runtime') +
+  ylab('Counts/ml')+
+  ggtitle('Data from 8/5 - 8/23')
+
+  
+  ggplot(allData, aes(x=turbidity, y=Bin1 )) + geom_point() + xlim(0, 0.2) +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14,face="bold"))+ylim(0,5000)+xlab('Turbidity (NTU)')+ylab('2-6 um particle counts (Counts/ml)')
+  
+    ggplot(allData, aes(x=turbidity, y=Bin1 )) + geom_point() + xlim(0, 0.2) +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14,face="bold"))+ylim(0,1500)+xlim(0,0.7)+xlab('Turbidity (NTU)')+ylab('2-6 um particle counts (Counts/ml)')+geom_smooth(method = "lm", se = TRUE)
+  
+
+```
+
+## 15) Plotting all data based on runtime intervals
+
+This code will subset the main dataframe to find the datapoints that occur at specified run time intervals.
+
+It will then plot those points on a scatterplot.
+
+The first scatter plot shows all of the data, some of which is from a different month than the rest.
+
+The second plot limits the data points to show just the month of july and some of august 2021.
+
+```{r plotting 95 percent confidence interval}
+##0-15 min, 15-30 min, 30 min - 4 hour, 4 hour - 24 hour, 24-36 hr, 36-48 hr, 48-72 hr, 72-96 hr
+OldAbove15 <- oldFile
+allDataAbove15 <- allData
+OldAbove15$sampledDatePC <- as.POSIXct(OldAbove15$sampledDatePC, tz = "EST", format="%Y-%m-%d %H:%M")
+OldAbove15$minutes <- as.numeric(format(OldAbove15$sampledDatePC,"%M"))
+allDataAbove15$minutes <- as.numeric(format(allDataAbove15$sampledDatePC,"%M"))
+OldAbove15 <- subset(OldAbove15, minutes > 15)
+allDataAbove15 <- subset(allDataAbove15, minutes >15)
+
+min015 <- subset(OldAbove15, (runDifference >= 0 & runDifference <= 0.25))
+min1530 <- subset(OldAbove15, (runDifference >= 0.25 & runDifference <= 0.50))
+min304 <- subset(OldAbove15, (runDifference >= 0.50 & runDifference <= 4.00))
+hr424 <- subset(OldAbove15, (runDifference >= 4.00 & runDifference <= 24.00))
+hr2436 <- subset(OldAbove15, (runDifference >= 24.00 & runDifference <= 36.00))
+hr3648 <- subset(OldAbove15, (runDifference >= 36.00 & runDifference <= 48.00))
+hr4872 <- subset(OldAbove15, (runDifference >= 48.00 & runDifference <= 72.00))
+hr7296 <- subset(OldAbove15, (runDifference >= 72.00 & runDifference <= 96.00))
+
+
+min015 <- subset(allDataAbove15, (runDifference >= 0 & runDifference <= 0.25))
+min1530 <- subset(allDataAbove15, (runDifference >= 0.25 & runDifference <= 0.50))
+min304 <- subset(allDataAbove15, (runDifference >= 0.50 & runDifference <= 4.00))
+hr424 <- subset(allDataAbove15, (runDifference >= 4.00 & runDifference <= 24.00))
+hr2436 <- subset(allDataAbove15, (runDifference >= 24.00 & runDifference <= 36.00))
+hr3648 <- subset(allDataAbove15, (runDifference >= 36.00 & runDifference <= 48.00))
+hr4872 <- subset(allDataAbove15, (runDifference >= 48.00 & runDifference <= 72.00))
+hr7296 <- subset(allDataAbove15, (runDifference >= 72.00 & runDifference <= 96.00))
+
+##min15 <- subset(allData, runDifference == 0.25)
+##min30 <- subset(allData, runDifference == 0.50)
+##hr24 <- subset(allData, runDifference == 24.00)
+##hr50 <- subset(allData, runDifference == 50.00)
+
+
+ggplot(min015, aes(x=Bin1)) + geom_histogram(binwidth=5) + xlab("Particle size") + ylab("frequency") + ggtitle("0 - 15 minutes")
+ggplot(min1530, aes(x=Bin1)) + geom_histogram(binwidth=5) + xlab("Particle size") + ylab("frequency") + ggtitle("15 - 30 minutes")
+ggplot(min304, aes(x=Bin1)) + geom_histogram(binwidth=5) + xlab("Particle size") + ylab("frequency") + ggtitle("30 minutes - 4 hours")
+ggplot(hr424, aes(x=Bin1)) + geom_histogram(binwidth=5) + xlab("Particle size") + ylab("frequency") + ggtitle("4 - 24 hours")
+ggplot(hr2436, aes(x=Bin1)) + geom_histogram(binwidth=5) + xlab("Particle size") + ylab("frequency") + ggtitle("24 - 36 hours")
+ggplot(hr3648, aes(x=Bin1)) + geom_histogram(binwidth=5) + xlab("Particle size") + ylab("frequency") + ggtitle("36 - 48 hours")
+ggplot(hr4872, aes(x=Bin1)) + geom_histogram(binwidth=5) + xlab("Particle size") + ylab("frequency") + ggtitle("48 - 72 hours")
+ggplot(hr7296, aes(x=Bin1)) + geom_histogram(binwidth=5) + xlab("Particle size") + ylab("frequency") + ggtitle("72 - 96 hours")
+
+```
+```{r plotting counts vs turbidity}
+subOldAbove15 <- oldFile
+subNewAbove15 <- allData
+
+subOldAbove15$sampledDatePC <- as.POSIXct(subOldAbove15$sampledDatePC, tz = "EST", format="%Y-%m-%d %H:%M")
+subOldAbove15$minutes <- as.numeric(format(subOldAbove15$sampledDatePC,"%M"))
+subNewAbove15$minutes <- as.numeric(format(subNewAbove15$sampledDatePC,"%M"))
+
+subOld <- subset(subOldAbove15, minutes > 15)
+subNew <- subset(subNewAbove15, minutes > 15)
+
+ggplot(subOldAbove15, aes(x=turbidity, y=Bin1)) + geom_point() + xlim(0, 0.4) +ggtitle('Data from 3/1 - 8/5' )
+ggplot(subNewAbove15, aes(x=turbidity, y=Bin1)) + geom_point() + xlim(0, 0.4)+ggtitle('Data from 8/5 - 8/23' )
+
+```
+
+## 16) Runtime vs. each bin
+
+This will plot all data for each bin vs. the runtime
+
+```{r plotting particle bins over runtime}
+OldAbove15 <- oldFile
+allDataAbove15 <- allData
+OldAbove15$sampledDatePC <- as.POSIXct(OldAbove15$sampledDatePC, tz = "EST", format="%Y-%m-%d %H:%M")
+OldAbove15$minutes <- as.numeric(format(OldAbove15$sampledDatePC,"%M"))
+allDataAbove15$minutes <- as.numeric(format(allDataAbove15$sampledDatePC,"%M"))
+OldAbove15 <- subset(OldAbove15, minutes > 15)
+allDataAbove15 <- subset(allDataAbove15, minutes >15)
+
+
+ggplot() + 
+  geom_point(data = allDataAbove15, aes(x = runDifference, y = Bin1, color = "Bin1")) +
+  geom_point(data = allDataAbove15, aes(x = runDifference, y = Bin2, color = "Bin2")) +
+  geom_point(data = allDataAbove15, aes(x = runDifference, y = Bin3, color = "Bin3")) +
+  geom_point(data = allDataAbove15, aes(x = runDifference, y = Bin4, color = "Bin4")) +
+  geom_point(data = allDataAbove15, aes(x = runDifference, y = Bin5, color = "Bin5")) +
+  geom_point(data = allDataAbove15, aes(x = runDifference, y = Bin6, color = "Bin6")) +
+  geom_point(data = allDataAbove15, aes(x = runDifference, y = Bin7, color = "Bin7")) +
+  geom_point(data = allDataAbove15, aes(x = runDifference, y = Bin8, color = "Bin8")) +
+  geom_point(data = allDataAbove15, aes(x = runDifference, y = Bin9, color = "Bin9")) +
+  scale_colour_manual("", 
+                      breaks = c("Bin1", "Bin2" ,"Bin3", "Bin4", "Bin5", "Bin6", "Bin7", "Bin8", "Bin9" ),
+                      values = c("red", "green", "blue", "purple", "orange", "yellow", "pink", "black", "grey")) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+  xlab('Run time (hours)') +
+  ylab('Particle counts (counts/ml)')+
+  ggtitle('Particle counts in each bin over run time')
+
+ggplot() + 
+  geom_point(data = OldAbove15, aes(x = runDifference, y = Bin1, color = "Bin1")) +
+  geom_point(data = OldAbove15, aes(x = runDifference, y = Bin2, color = "Bin2")) +
+  geom_point(data = OldAbove15, aes(x = runDifference, y = Bin3, color = "Bin3")) +
+  geom_point(data = OldAbove15, aes(x = runDifference, y = Bin4, color = "Bin4")) +
+  geom_point(data = OldAbove15, aes(x = runDifference, y = Bin5, color = "Bin5")) +
+  geom_point(data = OldAbove15, aes(x = runDifference, y = Bin6, color = "Bin6")) +
+  geom_point(data = OldAbove15, aes(x = runDifference, y = Bin7, color = "Bin7")) +
+  geom_point(data = OldAbove15, aes(x = runDifference, y = Bin8, color = "Bin8")) +
+  geom_point(data = OldAbove15, aes(x = runDifference, y = Bin9, color = "Bin9")) +
+  scale_colour_manual("", 
+                      breaks = c("Bin1", "Bin2" ,"Bin3", "Bin4", "Bin5", "Bin6", "Bin7", "Bin8", "Bin9" ),
+                      values = c("red", "green", "blue", "purple", "orange", "yellow", "pink", "black", "grey")) +
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))+
+  xlab('Run time (hours)') +
+  ylab('Particle counts (counts/ml)')+
+  ggtitle('Particle counts in each bin over run time')
+
+####################################################################################################################
+bin1New <- ggplot() + geom_point(data = allDataAbove15, aes(x = runDifference, y = Bin1, color = ))+ 
+         xlab('run time (hrs)') +
+         ylab('counts/ml') + ggtitle('bin1')+ylim(0,300)
+
+bin1Old <- ggplot() + geom_point(data = OldAbove15, aes(x = runDifference, y = Bin1, color = ))+ 
+         xlab('run time (hrs)') +
+         ylab('counts/ml') + ggtitle('bin1')+ylim(0,300)
+
+
+bin2 <- ggplot() + geom_point(data = allData, aes(x = runDifference, y = Bin2)) + xlab('run time (hrs)') + ylab('counts/ml') + ggtitle('bin2')
+bin3 <- ggplot() + geom_point(data = allData, aes(x = runDifference, y = Bin3)) + xlab('run time (hrs)') + ylab('counts/ml') + ggtitle('bin3')
+bin4 <- ggplot() + geom_point(data = allData, aes(x = runDifference, y = Bin4)) + xlab('run time (hrs)') + ylab('counts/ml') + ggtitle('bin4')
+bin5 <- ggplot() + geom_point(data = allData, aes(x = runDifference, y = Bin5)) + xlab('run time (hrs)') + ylab('counts/ml') + ggtitle('bin5')
+bin6 <- ggplot() + geom_point(data = allData, aes(x = runDifference, y = Bin6)) + xlab('run time (hrs)') + ylab('counts/ml') + ggtitle('bin6')
+bin7 <- ggplot() + geom_point(data = allData, aes(x = runDifference, y = Bin7)) + xlab('run time (hrs)') + ylab('counts/ml') + ggtitle('bin7')
+bin8 <- ggplot() + geom_point(data = allData, aes(x = runDifference, y = Bin8)) + xlab('run time (hrs)') + ylab('counts/ml') + ggtitle('bin8')
+bin9 <- ggplot() + geom_point(data = allData, aes(x = runDifference, y = Bin9)) + xlab('run time (hrs)') + ylab('counts/ml') + ggtitle('bin9')
+
+##(bin1 + bin2 + bin3) / (bin4 + bin5 + bin6 ) / (bin7 + bin8 + bin9)
+bin1New
+bin1Old
+```
+
+## 17) Bin 1 trend line
+
+This will fit a trend line to the bin 1 particle data and print an R^2 value.
+
+```{r closer look at bin 1 after fitting linear treand line}
+plot1 <- ggplot(allData, aes(runDifference, Bin1, color = filterRun)) + 
+          geom_line(aes(group = filterRun))
+
+data <-subset(allData, (filter >=21 & filter < 24))
+
+plot2 <-ggplot(data, aes(runDifference, Bin1, color = filterRun)) + 
+        geom_line(aes(group = filterRun))
+
+data1 <-subset(allData, (filterRun == "21-3"))
+
+plot3 <- ggplot(data1, aes(runDifference, Bin1, color = filterRun)) + 
+        geom_line(aes(group = filterRun))
+
+plot4 <- ggplot(allData, aes(runDifference, Bin1, label=Bin1)) + 
+          geom_point(aes(group = filterRun, color = filterRun))+
+         stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
+          geom_smooth(method = "lm", se = TRUE)
+
+plot5 <- ggplot(allData, aes(runDifference, Bin1, label=Bin1)) + 
+         geom_point(aes(group = filterRun, color = filterRun))+
+          coord_cartesian(ylim = c(0, 300))+
+          stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
+          geom_smooth(method = "lm", se = TRUE)
+plot1
+plot4
+plot5
+
+```
+
+
+## 18) Fitting polynomial
+
+This will fit a polynomial to the bin 1 data and print an R^2 value.
+
+```{r fitting polynomial to data}
+
+
+df <- data.frame("x"=allData$runDifference, "y"=allData$Bin1)
+
+my.formula <- y ~ poly(x, 3, raw = TRUE)
+p <- ggplot(allData, aes(runDifference, Bin1, label=Bin1)) + 
+         geom_point(aes(group = filterRun, color = filterRun))+
+          ##coord_cartesian(ylim = c(0, 300))+
+          ##stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
+          ##geom_smooth(method = "lm", se = TRUE)+
+          stat_smooth(method="lm", se=TRUE, fill=NA,
+                formula=my.formula,colour="red")
+
+m <- lm(my.formula, df)
+my.eq <- as.character(signif(as.polynomial(coef(m)), 3))
+label.text <- paste(gsub("x", "~italic(x)", my.eq, fixed = TRUE),
+              paste("italic(R)^2",  
+                    format(summary(m)$r.squared, digits = 2), 
+                    sep = "~`=`~"),
+                    sep = "~~~~")
+
+
+p + annotate(geom = "text", x = 0.2, y = 15000, label = label.text, 
+             family = "serif", hjust = 0, parse = TRUE, size = 2.5)
+
+ 
+
+```
+
+## 19) Polynomial for each filter
+
+This will divide the dataframe into individual filters then plot each filter and fit a polynomial to the data for bin 1.
+
+It will also print the R^2 value.
+
+
+```{r fitting line based on individual filter}
+filter9 <- subset(allData, filter == 9)
+filter10 <- subset(allData, filter == 10)
+filter11 <- subset(allData, filter == 11)
+filter12 <- subset(allData, filter == 12)
+filter13 <- subset(allData, filter == 13)
+filter14 <- subset(allData, filter == 14)
+filter15 <- subset(allData, filter == 15)
+filter16 <- subset(allData, filter == 16)
+filter17 <- subset(allData, filter == 17)
+filter18 <- subset(allData, filter == 18)
+filter19 <- subset(allData, filter == 19)
+filter21 <- subset(allData, filter == 21)
+filter22 <- subset(allData, filter == 22)
+filter23 <- subset(allData, filter == 23)
+filter24 <- subset(allData, filter == 24)
+filter25 <- subset(allData, filter == 25)
+filter26 <- subset(allData, filter == 26)
+PCL <- list(filter9, filter10, filter11, filter12, filter13, filter14, filter15, filter16, filter17, filter18, filter19, filter21, filter22, filter23, filter24, filter25, filter26)
+
+
+for (filter in PCL){
+   if (nrow(filter) == 0){
+     
+      next
+    }
+df <- data.frame("x"=filter$runDifference, "y"=filter$Bin1)
+
+my.formula <- y ~ poly(x, 3, raw = TRUE)
+p <- ggplot(filter, aes(runDifference, Bin1, label=Bin1)) + 
+         geom_point(aes(group = filterRun, color = filterRun))+
+          ##coord_cartesian(ylim = c(0, 300))+
+          ##stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
+          ##geom_smooth(method = "lm", se = TRUE)+
+          stat_smooth(method="lm", se=TRUE, fill=NA,
+                formula=my.formula,colour="red")
+
+m <- lm(my.formula, df)
+my.eq <- as.character(signif(as.polynomial(coef(m)), 2))
+label.text <- paste(gsub("x", "~italic(x)", my.eq, fixed = TRUE),
+              paste("italic(R)^2",  
+                    format(summary(m)$r.squared, digits = 3), 
+                    sep = "~`=`~"),
+                    sep = "~~~~")
+
+
+p <- p + annotate(geom = "text", x = 0.2, y = 500, label = label.text, 
+             family = "serif", hjust = 0, parse = TRUE, size = 2.5)
+print(p)
+}
+```
+
+```{r individual filter with runs}
+IDList <- list()
+filterList <- split(allData, allData$filter)
+i <- 0
+for (filter in filterList){
+  runDateList <- split(filter, filter$runID)
+
+  for (ID in runDateList){
+      i <- i +1
+    ID$filterRunDate <- paste(ID$filter,format(ID$sampledDatePC[1],"%m/%d"),sep=" - ")
+    IDList[[i]] <- ID
+  }
+}
+  FilterDateDF <- bind_rows(IDList)
+  FilterDateDF <- FilterDateDF[order(FilterDateDF$filter, FilterDateDF$Date), ]
+
+ FilterDateDF <- subset(FilterDateDF, Bin1 < 300)
+  newList <- split(FilterDateDF, f = FilterDateDF$filter)
+
+for (filter in newList){
+   if (nrow(filter) == 0){
+     
+      next
+    }
+plot <- ggplot(filter, aes(runDifference, Bin1, color = filterRunDate)) + 
+   geom_point(aes(group = filterRunDate)) + labs(color = "Filter - Run start date") +
+   theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14,face="bold"))+
+  xlab('Filter run time (hours)') +
+  ylab('2-6 um particle counts (Counts/ml)')+
+  ylim(0,300)
+print(plot)
+}
+
+boxplot(FilterDateDF$Bin1~FilterDateDF$filter, col=rainbow(4),
+           xlab = "Filter",
+           ylab = "2-6 um particle counts (Counts/ml)")
+  
+```
